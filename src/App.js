@@ -6,6 +6,7 @@ import pauseicon from './assets/pauseicon.svg';
 import windowicon from './assets/windowicon.svg';
 //style
 import './App.css';
+
 //My class
 class Title extends Component {
   render() {
@@ -16,44 +17,17 @@ class Title extends Component {
     )
   }
 }
-class Play extends Component {
-  render() {
-    return (
-      <div className="play icon" onClick={() => this.props.onClick()}>
-        <img src={playicon}/>
-      </div>
-    )
-  }
-}
-class Pause extends Component {
-  render() {
-    return (
-      <div className="pause icon" onClick={() => this.props.onClick()}>
-        <img src={pauseicon}/>        
-      </div>
-    )
-  }
-}
+
 class PlayControl extends Component {
-  constructor() {
-    super();
-    this.handlePlayClick = this.handlePlayClick.bind(this);
-    this.handlePauseClick = this.handlePauseClick.bind(this);
-    this.state = {isPlayed: false};
-  }
-  handlePlayClick() {
-    this.setState({isPlayed: true});
-  }
-  handlePauseClick() {
-    this.setState({isPlayed: false});
-  }
-  render() {
-    const isPlayed = this.state.isPlayed;    
-    return (!isPlayed)
-      ? <Play onClick={this.handlePlayClick} />
-      : <Pause onClick={this.handlePauseClick} />
+  render() {   
+    return (
+      <div className="play-control icon" onClick={() => this.props.onClick()}>
+        <img src={ this.props.isPlayed ? pauseicon : playicon }/>        
+      </div>
+    )
   }
 }
+
 class Sound extends Component {
   render() {
     return (
@@ -63,6 +37,7 @@ class Sound extends Component {
     )
   }
 }
+
 class Window extends Component {
   render() {
     return (
@@ -72,72 +47,91 @@ class Window extends Component {
     )
   }
 }
+
 class Time extends Component {
   render() {
     return (
     <div className="time">{this.props.value}</div>)
   }
 }
+
 class Board extends Component {
+  formatTime(time) {
+    let sec = Math.floor(time % 60);
+    let min = Math.floor(time / 60);
+    let hour = Math.floor(time / 3600);
+    if (sec < 10) sec = "0" + sec;
+    if (min < 10) min = "0" + min;
+    if (hour < 10) hour = "0" + hour;
+    return hour +" : " + min + " : " + sec;
+  }
   render() {
-    const time = "3:35";
-    return(
+    return(      
       <div className="board hidden">
         <div className="left">
-          <PlayControl />
+          <PlayControl isPlayed={this.props.isPlayed}  onClick={() => this.props.togglePlayVideo()}/>
           <Sound />          
         </div>
         <div className="right">
-          <Time value={time}/>
+          <Time value={this.formatTime(this.props.currentTime)}/>
           <Window /> 
         </div>
-
-
       </div>
     )
   }
 }
 
-class Clock extends Component {
-  constructor(props) {
-    super();
-    this.state = {date: new Date()}
-  }
-  componentDidMount() {
-    this.timerID = setInterval(() => this.tick(), 1000);
-  }
-  componentWillUnmount() {
-    clearInterval(this.timerID);
-  }
-  tick() {
-    this.setState({
-      date: new Date()
-    })
-  }
+class Video extends Component {
   render() {
-    let element = (
-        <div>
-          <h2>{ this.state.date.toLocaleTimeString() }</h2>
-        </div> 
-      ); 
-
-  return element;
+    const video = (
+      <video ref={this.props.videoRef} width="100%"  >
+        <source src="http://peach.themazzone.com/durian/movies/sintel-1024-surround.mp4" type="video/mp4"/>
+        <source src="movie.ogg" type="video/ogg"/>
+        Your browser does not support the video tag.
+      </video>      
+    )
+    return video;     
   }
-
 }
 
-
 class Player extends Component {
+  constructor() {
+    super();
+    this.state = {
+      isPlayed: false,
+      currentTime: 0
+    }
+    this.togglePlayVideo = this.togglePlayVideo.bind(this);
+  }
+  togglePlayVideo() {
+    if (this.state.isPlayed) 
+      this.pauseVideo();   
+    else
+      this.playVideo();
+    // console.log('toggle play');
+    this.setState({
+      isPlayed: !this.state.isPlayed
+    })
+  }
+  playVideo() {
+    this.videoElement.play(); 
+    this.timerID = setInterval(() => this.setState({
+      currentTime: this.videoElement.currentTime
+    }), 1000);
+  }
+  pauseVideo() {
+    this.videoElement.pause();
+    clearInterval(this.timerID);
+  }
   render() {
     const title = "Описание трасляции может быть длинным!";
     return (
       <div className="player">
-        <Title caption={title}/>
-        <Clock />
-        <Board />
+        <Title caption={title}/>        
+        <Video videoRef={el => this.videoElement = el}/>
+        <Board togglePlayVideo={this.togglePlayVideo} isPlayed={this.state.isPlayed} currentTime={this.state.currentTime}/>        
       </div>
     );
   }
 }
-
 export default Player;
